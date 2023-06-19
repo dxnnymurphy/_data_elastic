@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+  #######################################################################
+  ### services :: _data_elastic_elasticsearch
+  #######################################################################
+  _data_elastic_elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+    privileged: true
+    restart: always
+    hostname: elasticsearch
+    env_file:
+    - $PWD/config/__envrc.d/_data_elastic_elasticsearch.envrc
+    environment:
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    networks:
+    - _network-bridge-local
+    ports:
+    - 9200:9200
+    - 9300:9300
+    volumes:
+    - _volume__data_elastic_elasticsearch:/usr/share/elasticsearch/data
+    - $PWD/config/_data_elastic_elasticsearch/elasticsearch.yml:/etc/elastic/elasticsearch/elasticsearch.yml:ro
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '1m'
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+  
+  #######################################################################
+  ### services :: _data_elastic_kibana
+  #######################################################################
+  _data_elastic_kibana:
+    image: docker.elastic.co/kibana/kibana:8.6.0
+    privileged: true
+    env_file:
+    - $PWD/.secret/__envrc.d/credential._data_elastic_kibana.envrc
+    - $PWD/config/__envrc.d/_data_elastic_kibana.envrc
+    environment:
+      ELASTICSEARCH_URL: http://_data_elastic_elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://_data_elastic_elasticsearch:9200
+    networks:
+    - _network-bridge-local
+    ports:
+    - 5601:5601
+    volumes:
+    - _volume__data_elastic_kibana:/usr/share/kibana/data
+    - $PWD/config/_data_elastic_kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '1m'
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+networks:
+  _network-bridge-local:
+    driver: bridge
+  
+volumes:
+  _volume__data_elastic_elasticsearch: {}
+  _volume__data_elastic_kibana: {}
+    
